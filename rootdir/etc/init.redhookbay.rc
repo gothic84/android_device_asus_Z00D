@@ -1,0 +1,213 @@
+import init.common.rc
+import init.debug.rc
+import init.diag.rc
+import init.avc.rc
+import init.wireless.rc
+import init.wifi.rc
+import init.platform.usb.rc
+import init.gps.rc
+import init.compass.rc
+import init.bt.rc
+import init.modem.rc
+import init.asus.rc
+
+on early-init
+# Set boot_min_cap for boot to Android.
+    setprop ro.boot.min.cap 0
+
+on init
+
+    chmod 0770 /system/bin/upi_ug31xx
+    chown system system /system/bin/upi_ug31xx
+    chmod 0770 /dev/ug31xx
+    chown system system /dev/ug31xx
+
+    export LD_SHIM_LIBS \
+        /system/lib/libicuuc.so|libshim_icu.so:\
+        /system/bin/gpsd|libshim_gps.so:\
+        /system/lib/hw/gps.redhookbay.so|libshim_gps.so:\
+        /system/lib/hw/camera.vendor.redhookbay.so|libshim_camera.so:\
+        /system/bin/bd_prov|libstock_crypto.so:\
+        /system/lib/hw/keystore.vendor.clovertrail.so|libstock_crypto.so
+
+    write /sys/class/graphics/fbcon/cursor_blink 0
+    mkdir /data/system/ 0770 system system
+    mkdir /data/misc 01771 system misc
+    mkdir /data/misc/audio 0770 audio audio
+
+    chmod 0600 /dev/dri/controlD64
+    chmod 0640 /dev/matrix
+
+    # Android creates by-name disk links with the disk controller
+    # in the generated path, so that the names pulled out of the GPT
+    # can be associated with the correct disk. Create a shortcut to
+    # /dev/block/by-name so that we can use the same fstabs everywhere.
+    symlink /dev/block/pci/pci0000:00/0000:00:01.0/by-name /dev/block/by-name
+
+    write /proc/sys/kernel/hung_task_timeout_secs 0
+
+    chmod 0644 /system/framework/core.jar
+    chmod 0644 /system/framework/framework.jar
+    chmod 0644 /system/framework/apache-xml.jar
+    chmod 0644 /system/framework/ext.jar
+
+    mkdir /factory
+    mkdir /config
+
+    # Configure the proper cpusets
+    write /dev/cpuset/system-background/cpus 0-3
+    write /dev/cpuset/background/cpus 0-3
+    write /dev/cpuset/foreground/boost/cpus 0-3
+    write /dev/cpuset/foreground/cpus 0-3
+    write /dev/cpuset/cpus 0-3
+
+    # Read one page at a time for swap (default is 8)
+    write /proc/sys/vm/page-cluster 0
+
+on boot
+
+#  Permissions for Thermal Management
+    chown system system /sys/class/power_supply/bq24192_charger/device/charge_current_limit
+    chown system system /sys/module/intel_mid_osip/parameters/force_shutdown_occured
+    chown system system /sys/module/intel_mid_osip/parameters/thermal_shutdown_occured
+    chown system system /sys/class/thermal/cooling_device0/cur_state
+    chown system system /sys/class/thermal/cooling_device1/cur_state
+    chown system system /sys/devices/platform/coretemp.0/temp2_threshold1
+    chown system system /sys/devices/platform/coretemp.0/temp2_threshold2
+    chown system system /sys/class/thermal/deferrable_timer/enable
+    chown system system /sys/class/thermal/deferrable_timer/timeout
+    chown system system /sys/fps_throttle/notify
+    chown system system /sys/fps_throttle/handshake
+
+#   Disable audio offloading
+    setprop audio.offload.disable 1
+
+# Lte coexistence ( can be enabled the following: NRT / NRT+RT )
+# Enable LTE Coexistence NRT (Non Real Time)
+    setprop persist.service.cwsmgr.coex 1
+
+# Disable LTE coexistence RT (Real Time). Should be set to 0 to enable.
+    setprop persist.service.cwsmgr.nortcoex 0
+
+# Reboot in COS on shutdown request when charger is plugged
+    setprop ro.rebootchargermode true
+
+#  Enable submix audio path for widi
+    setprop widi.audio.module submix
+
+#  Enable HDCP by default for widi
+    setprop widi.hdcp.enable auto
+
+#  Enable frc stting for merr
+    setprop vppsettings.frc 1
+
+#  Enable slow-motion playback
+    setprop video.playback.slow-motion 1
+
+# set dirty background bytes to 24MB to reduce USB MTP write latencies
+    write /proc/sys/vm/dirty_background_bytes 25165824
+
+# Set debugfs ownership to media
+   chown media media /sys/kernel/debug/sst/fw_ssp_reg
+   chown media media /sys/kernel/debug/sst/shim_dump
+   chown media media /sys/kernel/debug/sst/sram_ia_lpe_mailbox
+   chown media media /sys/kernel/debug/sst/sram_lpe_checkpoint
+   chown media media /sys/kernel/debug/sst/sram_lpe_ia_mailbox
+   chown media media /sys/kernel/debug/sst/lpe_stack
+
+on post-fs-data
+    chown media_rw media_rw /data/media
+
+    mkdir /data/misc/firmware 0770 system system
+
+    mkdir /data/logs
+    chown system log /data/logs
+    chmod 0770 /data/logs
+
+    # Enable Dynamic Turbo feature
+    setprop persist.thermal.turbo.dynamic 1
+
+    #setup silentlake vidt and start service
+    chown system system /dev/vidt
+    chmod 0660 /dev/vidt
+    start sl_si_service
+
+on post-fs
+    # Assume SMP uses shared cpufreq policy for all CPUs
+    chown system system /sys/devices/system/cpu/cpu0/cpufreq/scaling_max_freq
+    chmod 0660 /sys/devices/system/cpu/cpu0/cpufreq/scaling_max_freq
+    chown system system /sys/devices/system/cpu/cpu1/cpufreq/scaling_max_freq
+    chmod 0660 /sys/devices/system/cpu/cpu1/cpufreq/scaling_max_freq
+    chown system system /sys/devices/system/cpu/cpu2/cpufreq/scaling_max_freq
+    chmod 0660 /sys/devices/system/cpu/cpu2/cpufreq/scaling_max_freq
+    chown system system /sys/devices/system/cpu/cpu3/cpufreq/scaling_max_freq
+    chmod 0660 /sys/devices/system/cpu/cpu3/cpufreq/scaling_max_freq
+
+    # Volume keys wakeup capability
+    chmod 0664 /sys/devices/platform/gpio-keys/enabled_wakeup
+    chmod 0664 /sys/devices/platform/gpio-keys/disabled_wakeup
+    chown media system /sys/devices/platform/gpio-keys/enabled_wakeup
+    chown media system /sys/devices/platform/gpio-keys/disabled_wakeup
+
+#  Permissions for Sensors
+
+    # Asus PS/ALS sensor drivers
+    chown system system /dev/psensor
+    chown system system /dev/lsensor
+    chown system system /sys/devices/virtual/sensors/psensor/switch
+    chown system system /sys/devices/virtual/sensors/lsensor/switch
+
+    chown system system /dev/sep_sec_driver
+    chmod 0666 /dev/sep_sec_driver
+
+    restorecon /config
+    restorecon_recursive /factory
+    restorecon_recursive /config
+    restorecon_recursive /logs
+
+# For audio headset ringtone volume index when ringer mode is vibrate
+    setprop ro.audio.vibra.ring.vol.idx 5
+
+# Permissions for Touch dclick Mode
+    chown system radio /sys/bus/i2c/devices/i2c-0/0-0038/dclick_mode
+    chmod 0664 /sys/bus/i2c/devices/i2c-0/0-0038/dclick_mode
+
+service audioserver /system/bin/audioserver
+    class main
+    user audioserver
+    # media gid needed for /dev/fm (radio) and for /data/misc/media (tee)
+    group audio camera drmrpc inet media mediadrm net_bt net_bt_admin net_bw_acct qcom_diag radio system wakelock
+    ioprio rt 4
+    writepid /dev/cpuset/foreground/tasks /dev/stune/foreground/tasks
+
+service drm /system/bin/drmserver
+    class main
+    user drm
+    group drm system inet drmrpc readproc sdcard_r
+    writepid /dev/cpuset/foreground/tasks
+
+on charger
+    mount ext4 /dev/block/by-name/system /system ro noatime barrier=1,data=ordered
+    mount ext4 /dev/block/by-name/logs /logs nosuid nodev barrier=1,data=ordered
+    start upi_ug31xx
+    start watchdogd
+
+service upi_ug31xx /system/bin/upi_ug31xx
+    class core
+    user system
+    group system
+#    seclabel u:r:asus_config:s0
+
+service keystore /system/bin/keystore /data/misc/keystore
+    class main
+    user keystore
+    group keystore drmrpc readproc
+    writepid /dev/cpuset/foreground/tasks
+    setenv LD_SHIM_LIBS "/system/lib/libbinder.so|libstock_crypto.so:/system/lib/hw/keystore.vendor.clovertrail.so|libstock_crypto.so"
+
+# Workaround for broken incall audio
+service bootsnd /system/bin/tinyplay /system/etc/silence.wav -D 0 -d 0 -p 880
+    class late_start
+    user root
+    group audio
+    oneshot

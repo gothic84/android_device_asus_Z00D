@@ -1,0 +1,82 @@
+#****************************************************************#
+# [ASUS BSP] Cheryl Chen - PF450CL002S - Add SaveLogMTP Services #
+#****************************************************************#
+on init
+    export PATH /sbin:/vendor/bin:/system/sbin:/system/bin:/system/xbin:/bin
+    mkdir /asdf 0771 system system
+
+    chmod 0775 /factory    
+
+on post-fs-data
+
+    symlink /proc/driver/charger_limit_enable /data/data/charger_limit_enable
+    symlink /proc/driver/chargerIC_status /data/data/chargerIC_status
+    symlink /proc/driver/gaugeIC_status /data/data/gaugeIC_status
+    symlink /sys/class/power_supply/battery/capacity /data/data/battery_status
+    symlink /proc/driver/battery_soh /data/data/battery_soh
+
+    chmod 0664 /sys/class/leds/asus_led/brightness
+    chown system system /sys/class/leds/asus_led/brightness
+    chown system system /sys/class/leds/asus_led/blink
+    chown system system /sys/class/leds/asus_led/ledPWM
+    chown system system /sys/class/leds/asus_led/ledCTRL
+    chmod 0664 /sys/class/leds/asus_led/trigger
+    chown system system /sys/class/leds/asus_led/trigger
+
+    symlink /sys/bus/i2c/devices/0-0038/ftinitstatus /data/data/touch_status
+    chmod 0777 /data/data/Touch_status
+    symlink /sys/bus/i2c/devices/0-0038/update_progress /data/touch_update_progress
+    chmod 0777 /data/touch_update_progress
+    chown system system /sys/bus/i2c/devices/0-0038/ftsfwupgradeapp
+    chown system system /sys/bus/i2c/devices/0-0038/ftstpfwver
+    chown system system /sys/bus/i2c/devices/0-0038/ftstprwreg
+    chown system system /sys/bus/i2c/devices/0-0038/tp_fw_info
+    chown system system /sys/bus/i2c/devices/0-0038/ftresetic
+    chown system system /sys/bus/i2c/devices/0-0038/glove_mode
+    chown system system /sys/bus/i2c/devices/0-0038/gesture_mode
+    chown system system /sys/devices/pci0000:00/0000:00:00.3/i2c-0/0-0038/gesture_mode
+    chown system system /sys/bus/i2c/devices/0-0038/dclick_mode
+    chown system system /sys/bus/i2c/devices/0-0038/keypad_mode
+    chmod 0664 /sys/bus/i2c/devices/0-0038/glove_mode
+    chmod 0664 /sys/bus/i2c/devices/0-0038/gesture_mode
+    chmod 0664 /sys/devices/pci0000:00/0000:00:00.3/i2c-0/0-0038/gesture_mode
+    chmod 0664 /sys/bus/i2c/devices/0-0038/keypad_mode
+    chown system system /sys/android_touch/ftsfwupgradeapp
+
+    chown system system /sys/class/backlight/psb-bl/brightness
+    chmod 0664 /sys/class/backlight/psb-bl/brightness
+    symlink /sys/class/backlight/psb-bl/brightness /data/data/BLTest
+    chmod 777 /data/data/BLTest
+
+    #  Permissions for Sensors
+    # accelerometer kxtj9
+    chown system system /sys/bus/i2c/devices/5-000f/enable
+    chown system system /sys/bus/i2c/devices/5-000f/delay
+ 
+    chmod 0660 /sys/bus/i2c/devices/5-000f/enable
+    chmod 0660 /sys/bus/i2c/devices/5-000f/delay
+
+    # AKM E-compass
+    chown system system /sys/class/compass/akm09911/enable_acc
+    chown system system /sys/class/compass/akm09911/enable_mag
+    chown system system /sys/class/compass/akm09911/enable_fusion
+    chown system system /sys/class/compass/akm09911/delay_acc
+    chown system system /sys/class/compass/akm09911/delay_mag
+    chown system system /sys/class/compass/akm09911/delay_fusion
+    chown system system /sys/class/compass/akm09911/accel
+    chown system system /dev/akm09911_dev
+
+    chmod 0660 /sys/class/compass/akm09911/enable_mag
+    chmod 0660 /sys/class/compass/akm09911/delay_mag
+    chmod 0660 /sys/class/compass/akm09911/enable_acc
+    chmod 0660 /sys/class/compass/akm09911/delay_acc
+    chmod 0660 /sys/class/compass/akm09911/enable_fusion
+    chmod 0660 /sys/class/compass/akm09911/delay_fusion
+    chmod 0660 /dev/akm09911_dev
+
+    chmod 0774 /sys/devices/virtual/compass/akm09911/akm_status
+    chmod 0774 /sys/devices/virtual/compass/akm09911/akm_09911_raw
+    chmod 0774 /sys/devices/virtual/compass/akm09911/akm_i2c
+    chmod 0774 /sys/bus/i2c/devices/5-000f/kxtj9_raw
+    chmod 0774 /sys/bus/i2c/devices/5-000f/kxtj9_status
+
